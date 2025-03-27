@@ -2,6 +2,9 @@
 
 A FiveM resource for managing and adjusting traffic density in your server.
 
+
+- [Showcase](https://www.youtube.com/watch?v=42bzFJoPDig)
+  
 - [Omes Traffic](https://imgur.com/XPkhb2G)
 
 ## Features
