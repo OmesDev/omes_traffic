@@ -2,7 +2,7 @@
 
 A FiveM resource for managing and adjusting traffic density in your server.
 
--[Omes Traffic](https://imgur.com/XPkhb2G)
+- [Omes Traffic](https://imgur.com/XPkhb2G)
 
 ## Features
 
