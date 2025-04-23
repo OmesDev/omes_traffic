@@ -7,11 +7,40 @@ local scenarioPedDensity = Config.DefaultDensity.scenarioPeds
 
 local hasPermissionResult = false
 local checkingPermission = false
+local isCurrentlyUpdating = false -- Flag to prevent infinite loops
 
 RegisterNetEvent('omes_traffic:permissionResult')
 AddEventHandler('omes_traffic:permissionResult', function(result)
     hasPermissionResult = result
     checkingPermission = false
+end)
+
+-- Add event to receive synchronized settings from server
+RegisterNetEvent('omes_traffic:syncSettings')
+AddEventHandler('omes_traffic:syncSettings', function(settings)
+    -- Prevent infinite loop by checking if we're the one updating
+    if isCurrentlyUpdating then
+        isCurrentlyUpdating = false
+        return
+    end
+    
+    pedDensity = settings.ped
+    vehicleDensity = settings.vehicle
+    parkedDensity = settings.parked
+    randomVehicleDensity = settings.random
+    scenarioPedDensity = settings.scenario
+    
+    -- Optional notification that settings were updated by another player
+    if Config.NotifyOnSync then
+        lib.notify({
+            title = Config.UI.notifications.info.title,
+            description = 'Traffic settings updated by another player',
+            type = Config.UI.notifications.info.type
+        })
+    end
+    
+    -- DO NOT automatically save settings when they were received from server
+    -- This prevents the infinite loop
 end)
 
 function SaveDensitySettings()
@@ -23,11 +52,18 @@ function SaveDensitySettings()
         scenario = scenarioPedDensity
     }
     
+    -- Mark that we're currently updating to prevent infinite loop
+    isCurrentlyUpdating = true
+    
+    -- Send to server to broadcast to all players
+    TriggerServerEvent('omes_traffic:updateServerSettings', settings)
+    
+    -- Save locally
     local encodedSettings = json.encode(settings)
     SetResourceKvp(Config.StorageKey, encodedSettings)
     lib.notify({
         title = Config.UI.notifications.success.title,
-        description = 'Settings saved successfully',
+        description = 'Settings saved and synced to all players',
         type = Config.UI.notifications.success.type
     })
 end
@@ -110,6 +146,10 @@ end
 
 Citizen.CreateThread(function()
     LoadDensitySettings()
+    
+    -- Request synced settings from server
+    Citizen.Wait(1000) -- Wait to ensure server is ready
+    TriggerServerEvent('omes_traffic:requestSettings')
 end)
 
 RegisterCommand('traffic', function()
