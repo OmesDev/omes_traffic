@@ -52,4 +52,72 @@ AddEventHandler('omes_traffic:checkPermission', function()
     end
     
     TriggerClientEvent('omes_traffic:permissionResult', src, hasPermission)
+end)
+
+-- Track server-wide traffic settings
+local serverTrafficSettings = {
+    ped = Config.DefaultDensity.pedestrians,
+    vehicle = Config.DefaultDensity.vehicles,
+    parked = Config.DefaultDensity.parkedCars,
+    random = Config.DefaultDensity.randomVehicles,
+    scenario = Config.DefaultDensity.scenarioPeds
+}
+
+-- Event to update server traffic settings and broadcast to all clients
+RegisterNetEvent('omes_traffic:updateServerSettings')
+AddEventHandler('omes_traffic:updateServerSettings', function(settings)
+    local src = source
+    local hasPermission = false
+    local player = source
+    
+    -- Check permission
+    if not Config.Permissions.enabled then
+        hasPermission = true
+    else
+        if IsPlayerAceAllowed(player, Config.Permissions.acePermission) then
+            hasPermission = true
+        end
+        
+        if not hasPermission and GetResourceState('es_extended') ~= 'missing' then
+            local ESX = exports['es_extended']:getSharedObject()
+            if ESX and ESX.GetPlayerFromId then
+                local xPlayer = ESX.GetPlayerFromId(player)
+                if xPlayer then
+                    for _, group in ipairs(Config.Permissions.allowedGroups) do
+                        if xPlayer.getGroup() == group then
+                            hasPermission = true
+                            break
+                        end
+                    end
+                end
+            end
+        end
+        
+        if not hasPermission and GetResourceState('qb-core') ~= 'missing' then
+            local QBCore = exports['qb-core']:GetCoreObject()
+            if QBCore and QBCore.Functions.GetPlayer then
+                local Player = QBCore.Functions.GetPlayer(player)
+                if Player then
+                    for _, group in ipairs(Config.Permissions.allowedGroups) do
+                        if Player.PlayerData.job.name == group then
+                            hasPermission = true
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    if hasPermission then
+        serverTrafficSettings = settings
+        TriggerClientEvent('omes_traffic:syncSettings', -1, serverTrafficSettings)
+    end
+end)
+
+-- When a player connects, send them the current server traffic settings
+RegisterNetEvent('omes_traffic:requestSettings')
+AddEventHandler('omes_traffic:requestSettings', function()
+    local src = source
+    TriggerClientEvent('omes_traffic:syncSettings', src, serverTrafficSettings)
 end) 
