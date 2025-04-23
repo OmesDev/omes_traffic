@@ -9,6 +9,10 @@ Config.DefaultDensity = {
     scenarioPeds = 1.0      -- Scenario peds (people doing activities)
 }
 
+-- Sync configuration
+Config.NotifyOnSync = false      -- Notify players when traffic settings are synced
+Config.SaveSyncedSettings = false -- Save synced settings locally (persists through player restarts)
+
 -- Permission settings
 Config.Permissions = {
     enabled = true,                      -- Set to false to allow anyone to use the command
